@@ -27,6 +27,7 @@ module.exports = {
         name: 'Happinessometer Service'
     },
     port: process.env.PORT || 3000,
+    token: process.env.SLACK_TOKEN,
     sessionName: 'connect.sid',
     log: {
         // Can specify one of 'combined', 'common', 'dev', 'short', 'tiny'
