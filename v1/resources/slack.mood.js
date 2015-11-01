@@ -60,7 +60,8 @@ module.exports = base.Resource.extend({
             moodService.setMood({
                 user: self.request.body.user_name,
                 mood: moodText,
-                comment: moodComment
+                comment: moodComment,
+                from: 'slack'
             }, function (err, newMood) {
                 var responseText;
 
