@@ -47,7 +47,8 @@ module.exports = base.Resource.extend({
         // TODO if user is present, validate the existence of that user within the company
 
         if (moodCommand === 'set') {
-            var moodText = parts[1];
+            var moodText = parts[1],
+                moodComment = parts.slice(2).join(' ') || "I'm feeling " + moodText;
 
             if (moodsEnum.indexOf(moodText) < 0) {
                 return self.response.send("Sorry, I don't know that feeling");
@@ -57,7 +58,7 @@ module.exports = base.Resource.extend({
             moodService.setMood({
                 user: self.request.body.user_name,
                 mood: moodText,
-                comment: "I'm feeling " + moodText
+                comment: moodComment
             }, function(err, newMood) {
                 var responseText;
     
