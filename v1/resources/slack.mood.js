@@ -46,11 +46,11 @@ module.exports = base.Resource.extend({
 
         // TODO if user is present, validate the existence of that user within the company
 
-	if (moodCommand === 'set') {
+        if (moodCommand === 'set') {
             var moodText = parts[1];
 
             if (moodsEnum.indexOf(moodText) < 0) {
-            	return self.response.send("Sorry, I don't know that feeling");
+                return self.response.send("Sorry, I don't know that feeling");
             }
 
 
@@ -96,19 +96,19 @@ module.exports = base.Resource.extend({
 
                 var url = "https://chart.googleapis.com/chart?cht=p3&chs=700x300",
                     chlValues, chdValues, extraParams, result;
-			
+
                 if (error) return self.dispatchError(error);
 
-		chlValues = aggregation.map(function(item) { return item.mood + " (" + item.quantity + ")"});
-		chdValues = aggregation.map(function(item) { return item.quantity });
-		extraParams = querystring.stringify({
-			chd: "t:" + chdValues.join(','),
-			chl: chlValues.join('|')
+                chlValues = aggregation.map(function(item) { return item.mood + " (" + item.quantity + ")"});
+                chdValues = aggregation.map(function(item) { return item.quantity });
+                extraParams = querystring.stringify({
+                    chd: "t:" + chdValues.join(','),
+                    chl: chlValues.join('|')
                 });
 
-	        result = "<" + url + "&" + extraParams + "| Current Mood Graph> :bar_chart:";
-
-            	return self.response.send(result);
+                result = "<" + url + "&" + extraParams + "| Current Mood Graph> :bar_chart:";
+                
+                return self.response.send(result);
             });
         }
     }
