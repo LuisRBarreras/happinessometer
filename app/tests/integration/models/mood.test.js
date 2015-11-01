@@ -40,7 +40,8 @@ describe('Mood', function() {
     it('#save() should create a new Mood', function(done) {
         var mood = new Mood({
             mood: 'joy',
-            comment: 'I dont have anything to add'
+            comment: 'I dont have anything to add',
+            from: 'web'
         });
 
         mood.save(function(err, newMood) {

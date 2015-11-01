@@ -11,12 +11,14 @@ var base = require('../lib/base'),
 module.exports = base.Resource.extend({
     needsToken: [],
 
-    post: function() {
+    post: function () {
+        'use strict';
+
         var self = this;
 
         console.log('Request: ', self.request.body);
 
-        var errors = validate(self.request.body, { 
+        var errors = validate(self.request.body, {
             token: {
                 presence: true
             },
@@ -59,14 +61,14 @@ module.exports = base.Resource.extend({
                 user: self.request.body.user_name,
                 mood: moodText,
                 comment: moodComment
-            }, function(err, newMood) {
+            }, function (err, newMood) {
                 var responseText;
-    
+
                 if (err) {
                     return self.handleError(err);
                 }
-    
-                switch(newMood.mood) {
+
+                switch (newMood.mood) {
                     case 'love':
                         responseText = "Glad you feel " + newMood.mood + " I'd like to feel that way too! :heart_eyes:";
                         break;
@@ -77,15 +79,15 @@ module.exports = base.Resource.extend({
                         responseText = "Normal, that's boring. You need some fun things in your life. What about this :dancer:";
                         break;
                     case 'surprise':
-                        responseText = "So someone surpised you like this :scream:, or like this :astonished:"
+                        responseText = "So someone surpised you like this :scream:, or like this :astonished:";
                         break;
                     case 'sadness':
                     case 'fear':
                     case 'disgust':
-                        responseText = "I now know you feel " + newMood.mood + ". Do you need to talk with someone? I could hear you!"
+                        responseText = "I now know you feel " + newMood.mood + ". Do you need to talk with someone? I could hear you!";
                         break;
                     case 'anger':
-                        responseText = "Oh... If you feel " + newMood.mood + " I know someone that knowns someone.., just in case :smiling_imp:" 
+                        responseText = "Oh... If you feel " + newMood.mood + " I know someone that knowns someone.., just in case :smiling_imp:";
                         break;
                 }
 
@@ -93,22 +95,28 @@ module.exports = base.Resource.extend({
             });
         } else if (moodCommand === "get") {
 
-            moodService.quantityReport(function(error, aggregation) {
+            moodService.quantityReport(function (error, aggregation) {
 
                 var url = "https://chart.googleapis.com/chart?cht=p3&chs=700x300",
                     chlValues, chdValues, extraParams, result;
 
-                if (error) return self.dispatchError(error);
+                if (error) {
+                    return self.dispatchError(error);
+                }
 
-                chlValues = aggregation.map(function(item) { return item.mood + " (" + item.quantity + ")"});
-                chdValues = aggregation.map(function(item) { return item.quantity });
+                chlValues = aggregation.map(function (item) {
+                    return item.mood + " (" + item.quantity + ")";
+                });
+                chdValues = aggregation.map(function (item) {
+                    return item.quantity;
+                });
                 extraParams = querystring.stringify({
                     chd: "t:" + chdValues.join(','),
                     chl: chlValues.join('|')
                 });
 
                 result = "<" + url + "&" + extraParams + "| Current Mood Graph> :bar_chart:";
-                
+
                 return self.response.send(result);
             });
         }

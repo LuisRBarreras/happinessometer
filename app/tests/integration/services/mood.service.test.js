@@ -1,8 +1,8 @@
 'use strict';
 
-var assert = require('assert'),
+var _ = require('lodash'),
+    assert = require('assert'),
     should = require('should'),
-    _ = require('lodash'),
     async = require('async'),
     mongoose = require('mongoose'),
     chalk = require('chalk'),
@@ -11,7 +11,7 @@ var assert = require('assert'),
     Mood = require('../../../models/mood'),
     moodService = require('../../../services/mood.service')();
 
-describe('MoodService', function() {
+describe('MoodService', function () {
     var db;
 
     before(function(done) {
@@ -49,21 +49,27 @@ describe('MoodService', function() {
         });
     });
 
-    describe('#findAll', function() {
+    describe('#findAll', function () {
         before(function(done) {
             var moods = [],
                 mood,
                 total = 35,
-                index = 1;
-            while (index <= total) {
+                index = 0;
+            while (index < total) {
                 mood = moodEnum[_.random(0, 7)];
-                moods.push({ mood: mood, comment: 'Im feeling ' + mood});
+                moods.push({
+                    mood: mood,
+                    comment: 'Im feeling ' + mood,
+                    from: 'web'
+                });
                 index++;
             }
-            
-            async.each(moods, function(mood, callback) {
-                moodService.setMood(mood, function(err, m) {
-                    if (err) return callback(err);
+
+            async.each(moods, function (mood, callback) {
+                moodService.setMood(mood, function(err) {
+                    if (err) {
+                        return callback(err);
+                    }
                     callback();
                 });
             }, function(err) {
@@ -72,7 +78,7 @@ describe('MoodService', function() {
         });
 
         it('with page=1 should return the correct number of moods', function(done) {
-            moodService.findAllWithPage(1, function(err, moods, pageCount, itemCount) {
+            moodService.findAllWithPage(1, function (err, moods, pageCount, itemCount) {
                 should.not.exist(err);
                 moods.length.should.be.equal(30);
                 pageCount.should.be.equal(2);

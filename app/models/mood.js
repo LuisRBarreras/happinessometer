@@ -1,14 +1,13 @@
 'use strict';
 
 var mongoose = require('mongoose'),
-    moment = require('moment'),
     moodEnum = require('./mood_enum'),
     Schema = mongoose.Schema;
 
-module.exports = mongoose.model('Mood',  new Schema({
+module.exports = mongoose.model('Mood', new Schema({
     user: {
         type: String,
-        required: false,
+        required: false
     },
     mood: {
         type: String,
@@ -20,14 +19,18 @@ module.exports = mongoose.model('Mood',  new Schema({
         maxlength: 140,
         required: true
     },
-    // TODO createdAt should be UTC
+    from: {
+        type: String,
+        enum: ['web', 'android', 'ios', 'slack'],
+        required: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
     }
 }, {
     toJSON: {
-        transform: function(doc, ret) {
+        transform: function (doc, ret) {
             delete ret._id;
             delete ret.__v;
             delete ret.id;
