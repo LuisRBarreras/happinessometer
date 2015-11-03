@@ -8,19 +8,23 @@ var MoodService = function() {
 };
 
 MoodService.prototype.setMood = function(moodConfig, callback) {
-    if (!moodConfig ||  !moodConfig.mood || !moodConfig.comment || !moodConfig.from) {
+    if (!moodConfig ||  !moodConfig.mood || !moodConfig.comment) {
         return errorsUtils.handleAppValidationError('No mood values provided.', callback);
     }
 
     var newMoodSetting = {
         mood: moodConfig.mood.toLowerCase(),
-        comment: moodConfig.comment,
-        from: moodConfig.from
+        comment: moodConfig.comment
     };
     
     if (moodConfig.user) {
         newMoodSetting.user = moodConfig.user
     }
+
+    if (moodConfig.from) {
+        newMoodSetting.from = moodConfig.from;
+    }
+    
     var newMood = Mood(newMoodSetting);
 
     newMood.save(function(err, mood) {
