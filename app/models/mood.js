@@ -22,7 +22,8 @@ module.exports = mongoose.model('Mood', new Schema({
     from: {
         type: String,
         enum: ['web', 'android', 'ios', 'slack'],
-        required: true
+        required: true,
+        default: 'web'
     },
     createdAt: {
         type: Date,
