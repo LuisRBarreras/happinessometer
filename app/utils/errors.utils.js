@@ -21,7 +21,7 @@ var error = function (settings) {
 var errorWithType = function (error, type) {
     if (error instanceof Error) {
         error.type = type;
-        module.exports.logError(error);
+        logError(error);
         return error;
     }
     throw new Error('Error is not an error');
