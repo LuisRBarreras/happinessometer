@@ -6,6 +6,7 @@ var cors = require('cors');
 var mongoose = require('mongoose');
 var chalk = require('chalk');
 var config = require('./config/config');
+var appLogger = require('./app/utils/logger');
 
 var app = express();
 
@@ -19,13 +20,12 @@ app.use(cors({
 
 var db = mongoose.connect(config.db.uri, config.db.options, function(err) {
 	if (err) {
-		console.error(chalk.red('Could not connect to MongoDB!'));
-		console.log(chalk.red(err));
+		appLogger.error(err, 'Could not connect to MongoDB!');
 	}
 });
 
 mongoose.connection.on('error', function(err) {
-	console.error(chalk.red('MongoDB connection error: ' + err));
+	appLogger.error('MongoDB connection error: ' + err);
 	process.exit(-1);
 });
 

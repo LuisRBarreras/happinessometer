@@ -2,10 +2,12 @@
 
 var base = require('../lib/base'),
     validate = require('validate.js'),
-    jwt = require('jsonwebtoken'),
+    jwt = require('jsonwebtoken');
+
+var config = require('../../config/config'),
     emailService = require('../../app/services/email.service'),
-    userService = require('../../app/services/user.service')(emailService),
-    config = require('../../config/config');
+    logger = require('../../app/utils/logger'),
+    userService = require('../../app/services/user.service')(emailService);
 
 module.exports = base.Resource.extend({
     post: function() {
@@ -42,8 +44,11 @@ module.exports = base.Resource.extend({
                 return that.dispatchBadRequestError('Authentication failed.');
             }
 
+            if (process.env["NODE_ENV"] != "production") {
+                logger.debug("User to be tokenized: " + JSON.stringify(user));
+            }
             var token = jwt.sign(user, config.secretKey, {
-                expiresInMinutes: 1440 // expires in 24 hours
+                expiresIn: 1440000 // expires in 24 hours
             });
 
             return that.response.json({ message: 'Enjoy your token!', token: token });

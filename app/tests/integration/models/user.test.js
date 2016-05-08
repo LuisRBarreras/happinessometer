@@ -7,18 +7,34 @@ var assert = require('assert'),
     chalk = require('chalk'),
     moment = require('moment'),
     config = require('../../../../config/config'),
+    Company = require('../../../models/company'),
     User = require('../../../models/user');
 
 describe('User', function() {
-    var db;
+    var db,
+        company;
 
     before(function(done) {
         db = mongoose.connect(config.db.uri, config.db.options, function(err) {
+            var newCompany;
+
             if (err) {
                 console.error(chalk.red('Could not connect to MongoDB!'));
                 console.log(chalk.red(err));
+                done(err);
+            } else {
+                newCompany = new Company({
+                    name: 'Company Inc',
+                    domain: '@company.com'
+                });
+                newCompany.save(function(err, comp) {
+                    if (err || !comp) {
+                        done(err);
+                    }
+                    company = comp;
+                    done();
+                });
             }
-            done(err);
         });
     });
 
@@ -27,6 +43,9 @@ describe('User', function() {
             async.parallel([
                 function(cb) {
                     User.remove({}, cb);
+                },
+                function(cb) {
+                    Company.remove({}, cb);
                 }
             ], function() {
                 db.disconnect();
@@ -78,7 +97,8 @@ describe('User', function() {
             name: {
                 first: 'Rafael', last: 'Gutierrez'
             },
-            createdBy: 'rmartinez'
+            createdBy: 'rmartinez',
+            company: company._id
         });
 
         user.save(function(err, newUser) {

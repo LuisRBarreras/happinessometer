@@ -1,24 +1,24 @@
 'use strict';
 
-var chalk = require('chalk');
+var logger = require('./logger');
 
-module.exports.logError = function (error) {
+var logError = function (error) {
     if (error && error.message) {
-        console.log(chalk.red("Error: " + error.message));
+        logger.error(error.message);
     }
 }
 
-module.exports.error = function (settings) {
+var error = function (settings) {
     var errSettings = settings || {},
         err = new Error(errSettings.message);
     if (errSettings.type) {
         err.type = errSettings.type;
     }
-    module.exports.logError(err);
+    logError(err);
     return err;
 }
 
-module.exports.errorWithType = function (error, type) {
+var errorWithType = function (error, type) {
     if (error instanceof Error) {
         error.type = type;
         module.exports.logError(error);
@@ -28,16 +28,23 @@ module.exports.errorWithType = function (error, type) {
 }
 
 module.exports.handleMongoDBError = function (err, callback) {
-    return callback(module.exports.errorWithType(err, 'App.MongoDB'));
+    return callback(errorWithType(err, 'App.Error.MongoDB'));
 }
 
 module.exports.handleEmailError = function (err, callback) {
-    return callback(module.exports.errorWithType(err, 'App.Email'));
+    return callback(errorWithType(err, 'App.Error.Email'));
 }
 
 module.exports.handleAppValidationError = function (message, callback) {
-    return callback(module.exports.error({
+    return callback(error({
         message: message,
-        type: 'App.Validation'
+        type: 'App.Error.Validation'
+    }));
+}
+
+module.exports.handleAppCommonError = function (message, callback) {
+    return callback(error({
+        message: message,
+        type: 'App.Error.Common'
     }));
 }

@@ -6,8 +6,47 @@ Happinessometer Service
 
     npm install
 
-## Run the app in DEV mode
+## Requirements:
 
-    npm run-script dev
+* [NodeJS v4.4.4](https://nodejs.org/en/)
+* [MongoDB v3.2.4](https://www.mongodb.com/)
 
-app will run using port `3000`.
+## To Run the app in DEV mode
+
+First be sure mongo is running.
+
+Install dependencies running:
+
+    npm install
+
+Then:
+
+    npm run dev
+
+This will start the app in:
+
+    http://localhost:3000
+
+## Running the tests
+
+To run all tests:
+
+    npm run test-all
+
+To run only unit tests:
+
+    npm run test
+
+To run only integration tests:
+
+    npm run test-integration
+
+To run only api tests:
+
+    npm run test-api
+
+## More documentation
+
+To read about the API.
+
+To read about how to deploy to heroku.

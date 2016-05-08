@@ -1,0 +1,8 @@
+db.moods.aggregate([{
+    $lookup: {
+        from: "companies",
+        localField: "company",
+        foreignField: "_id",
+        as: "companies"
+    }
+}])

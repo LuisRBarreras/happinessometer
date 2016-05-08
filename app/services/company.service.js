@@ -2,7 +2,8 @@
 
 var Company = require('../models/company'),
     User = require('../models/user'),
-    validate = require('validate.js');
+    validate = require('validate.js'),
+    errorsUtils = require('../utils/errors.utils');
 
 var CompanyService = function() {
 };
@@ -64,12 +65,17 @@ CompanyService.prototype.deleteWithDomain = function(domainName, callback) {
 CompanyService.prototype.findWithDomain = function(domainName, callback) {
     Company.findOne({ domain: domainName }, function(err, company) {
         if (err) {
-            return callback({
-                message: 'Error finding the Company with domain ' + domainName + '.',
-                cause: err
-            });
+            return errorsUtils.handleMongoDBError(err, callback);
         }
+        return callback(err, company);
+    });
+};
 
+CompanyService.prototype.findById = function(id, callback) {
+    Company.findOne({ _id: id }, function(err, company) {
+        if (err) {
+            return errorsUtils.handleMongoDBError(err, callback);
+        }
         return callback(err, company);
     });
 };

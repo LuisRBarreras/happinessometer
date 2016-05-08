@@ -28,10 +28,9 @@ module.exports = base.Resource.extend({
             });
         }
 
-        // TODO if user is present, validate the existence of that user within the company
-
         moodService.setMood({
-            user: self.request.body.user,
+            user: self.request.user.id,
+            company: self.request.user.company.id,
             mood: self.request.body.mood,
             comment: self.request.body.comment
         }, function(err, newMood) {
@@ -47,7 +46,7 @@ module.exports = base.Resource.extend({
         var self = this,
             page = parseInt(self.request.query.page);
 
-        moodService.findAllWithPage(page ? page : 1, function(err, moods, totalPages, moodsCount) {
+        moodService.findAllWithPage(self.request.user.company.id, page ? page : 1, function(err, moods, totalPages, moodsCount) {
             if (err) {
                 return self.handleError(err);
             }

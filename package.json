@@ -1,13 +1,16 @@
 {
   "name": "happinessometer-service",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "./bin/www",
     "dev": ". ./devenv; forever -w ./bin/www",
     "test": "mocha --require should --reporter dot --ui bdd app/tests/unit/**/*.test.js",
     "test-integration": ". ./testenv; mocha --require should --ui bdd app/tests/integration/**/*.test.js",
-    "test-api": ". ./testenv; mocha --require should --ui bdd v1/tests/**/*.test.js"
+    "test-api": ". ./apienv; mocha --require should --ui bdd v1/tests/**/*.test.js",
+    "test-all": "npm run test; npm run test-integration; npm run test-api",
+    "drop-test-db": "mongo happinessometer-test --eval 'db.dropDatabase()'",
+    "drop-dev-db": "mongo happinessometer-dev --eval 'db.dropDatabase()'"
   },
   "dependencies": {
     "async": "^1.4.2",
@@ -24,10 +27,11 @@
     "lodash": "~3.10.1",
     "mandrill-api": "~1.0.45",
     "moment": "^2.10.3",
-    "mongoose": "4.0.6",
+    "mongoose": "4.4.12",
     "morgan": "~1.5.3",
     "randomstring": "^1.0.6",
-    "validate.js": "~0.8.0"
+    "validate.js": "~0.8.0",
+    "winston": "^2.2.0"
   },
   "devDependencies": {
     "forever": "0.14.1",
@@ -36,6 +40,6 @@
     "superagent": "^1.2.0"
   },
   "engines": {
-    "node": "0.10.x"
+    "node": "4.4.4"
   }
 }

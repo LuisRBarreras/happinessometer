@@ -15,7 +15,6 @@ module.exports = mongoose.model('Company', new Schema({
         required: true,
         unique : true
     },
-    // TODO createdAt should be UTC
     createdAt: {
         type: Date,
         default: Date.now
@@ -23,10 +22,10 @@ module.exports = mongoose.model('Company', new Schema({
 }, {
     toJSON: {
         transform: function(doc, ret) {
-            ret.id = doc._id;
             delete ret._id;
             delete ret.__v;
             delete ret.createdAt;
+            delete ret.id;
             return ret;
         }
     }

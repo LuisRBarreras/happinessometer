@@ -63,7 +63,7 @@ describe('UserService', function() {
 
     function assertAppValidationErrorWithMessage(message, err) {
         err.message.should.be.equal(message);
-        err.type.should.be.equal('App.Validation');
+        err.type.should.be.equal('App.Error.Validation');
     }
 
     describe('#requestNewUser', function() {

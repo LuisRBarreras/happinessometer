@@ -6,7 +6,12 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     userSchema;
 
-userSchema = new Schema({ 
+userSchema = new Schema({
+    company: {
+        type: Schema.ObjectId,
+        ref: 'Company',
+        required: true
+    },
     username: {
         type: String,
         required: true,
@@ -41,7 +46,6 @@ userSchema = new Schema({
         required: true,
         default: false
     },
-    // TODO createdAt should be UTC
     createdAt: {
         type: Date,
         default: Date.now
@@ -49,7 +53,6 @@ userSchema = new Schema({
 }, {
     toJSON: {
         transform: function(doc, ret) {
-            ret.id = doc._id;
             delete ret._id;
             delete ret.salt;
             delete ret.__v;

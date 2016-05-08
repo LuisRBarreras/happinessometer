@@ -14,7 +14,12 @@ var mongoose = require('mongoose'),
  *
  * A request to add a user into the app is valid until 'validUntil' date.
  */
-pendingUserSchema = new Schema({ 
+pendingUserSchema = new Schema({
+    company: {
+        type: Schema.ObjectId,
+        ref: 'Company',
+        required: true
+    },
     email: {
         type: String,
         lowercase: true, 
