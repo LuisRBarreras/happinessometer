@@ -9,7 +9,7 @@ Happinessometer Service
 ## Requirements:
 
 * [NodeJS v4.4.4](https://nodejs.org/en/)
-* [MongoDB v3.2.4](https://www.mongodb.com/)
+* [MongoDB v3.0.7](https://www.mongodb.com/)
 
 ## To Run the app in DEV mode
 

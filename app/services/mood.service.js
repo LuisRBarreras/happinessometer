@@ -148,8 +148,6 @@ class MoodService {
             $match: {
                 company: mongoose.Types.ObjectId(companyId)
             }
-        }, {
-            $unwind: '$mood'
         },{
             $group: {
                 _id: '$mood',
