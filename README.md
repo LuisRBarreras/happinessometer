@@ -1,10 +1,6 @@
 # Happinessometer
 
-Happinessometer Service
-
-## Install dependencies
-
-    npm install
+Happinessometer Service.
 
 ## Requirements:
 
