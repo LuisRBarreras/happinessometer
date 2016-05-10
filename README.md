@@ -43,6 +43,6 @@ To run only api tests:
 
 ## More documentation
 
-To read about the [API](happinessometer/API.md).
+To read about the [API](https://github.com/Nearsoft/happinessometer/blob/master/API.md).
 
 To read about how to deploy to heroku.
