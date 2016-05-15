@@ -1,10 +1,18 @@
 'use strict';
 
-const _ = require('lodash'),
-    mongoose = require('mongoose'),
-    Mood = require('../models/mood'),
+const 
+    _ = require('lodash'),
+    moment = require('moment'),
+    mongoose = require('mongoose');
+
+const
     companyService = require('../services/company.service')(),
-    errorsUtils = require('../utils/errors.utils');
+    errorsUtils = require('../utils/errors.utils'),
+    logger = require('../utils/logger'),
+    DateUtils = require('../utils/date.utils'),
+    Mood = require('../models/mood');
+
+const PER_PAGE = 30;
 
 class MoodService {
     constructor() {
@@ -59,169 +67,39 @@ class MoodService {
         });
     }
 
-    findAllWithPage(companyId, page, callback) {
-        var perPage = 30;
+    findAll(companyId, params, callback) {
+        let _page = 1,
+            criteria = {
+                company: companyId
+            };
 
-        Mood.find({ company: companyId })
-            .limit(perPage)
+        if (params.page && params.page >= 2) {
+            _page = params.page;
+        }
+
+        if (params.dateRange) {
+            criteria.createdAt = DateUtils.createDateRangeCriteriaIfAny(params.dateRange);
+        }
+
+        Mood.find(criteria)
+            .limit(PER_PAGE)
             .populate('company')
             .populate('user')
-            .skip(perPage * (page - 1))
+            .skip(PER_PAGE * (_page - 1))
             .sort({
                 createdAt: 'desc'
             })
-            .exec(function (err1, moods) {
-                if (err1) {
-                    return errorsUtils.handleMongoDBError(err1, callback);
+            .exec((err, moods) => {
+                if (err) {
+                    return errorsUtils.handleMongoDBError(err, callback);
                 }
-                Mood.count().exec(function(err2, count) {
-                    if (err2) {
-                        return errorsUtils.handleMongoDBError(err2, callback);
+                Mood.count(criteria).exec((err, count) => {
+                    if (err) {
+                        return errorsUtils.handleMongoDBError(err, callback);
                     }
-                    callback(null, moods, _.ceil(count / perPage), count);
+                    callback(err, moods, _.ceil(count / PER_PAGE), count);
                 });
             });
-    }
-
-    findAllByCompanyWithPage(page, companyDomain, dateRange, callback) {
-        var perPage = 30;
-
-        companyService.findWithDomain(companyDomain, function(companyErr, company) {
-            var criteria = { company: company._id };
-            if (companyErr) {
-                return errorsUtils.handleMongoDBError(companyErr, callback);
-            }
-
-            if (!company) {
-                return errorsUtils.handleAppCommonError('No Company found with domain %s', companyDomain);
-            }
-
-            if (dateRange && dateRange.to && dateRange.from) {
-                criteria.createdAt = {
-                    '$gte': dateRange.from.startOf('day').utc().toDate(),
-                    '$lt': dateRange.to.endOf('day').utc().toDate()
-                }
-            }
-
-            Mood.find(criteria)
-                .limit(perPage)
-                .populate('company')
-                .populate('user')
-                .skip(perPage * (page - 1))
-                .sort({
-                    createdAt: 'desc'
-                })
-                .exec(function (err1, moods) {
-                    if (err1) {
-                        return errorsUtils.handleMongoDBError(err1, callback);
-                    }
-                    Mood.count(criteria).exec(function(err2, count) {
-                        if (err2) {
-                            return errorsUtils.handleMongoDBError(err2, callback);
-                        }
-                        callback(null, moods, _.ceil(count / perPage), count);
-                    });
-                });
-        });
-    }
-
-    findAll(companyId, callback) {
-        var perPage = 30;
-
-        Mood.find({ company: companyId })
-            .exec(function (err1, moods) {
-                if (err1) {
-                    return errorsUtils.handleMongoDBError(err1, callback);
-                }
-                callback(null, moods);
-            });
-    }
-
-    quantityReport(companyId, callback) {
-        // find all users in company
-        // find all company moods in that period of time
-        // build a json with moods per user
-        // calculate average mood per user
-        // calculate average mood per company (average mood in all users)
-
-        Mood.aggregate([{
-            $match: {
-                company: mongoose.Types.ObjectId(companyId)
-            }
-        },{
-            $group: {
-                _id: '$mood',
-                mood: { $first: '$mood' },
-                quantity: { $sum: 1 }
-            }
-        }]).exec(function(err2, result) {
-            if (err2) {
-                return errorsUtils.handleMongoDBError(err2, callback);
-            }
-            return callback(null, result);
-        });
-    }
-
-    hashtagReport(callback) {
-        this.findAll(function(err, moods) {
-            // TODO handle error
-
-            callback(null, {
-                hashtags: [{
-                    hashtag: '#yolo',
-                    quantity: 1000,
-                    moods: [{
-                        mood: 'happy',
-                        quantity: 500
-                    },{
-                        mood: 'sad',
-                        quantity: 300
-                    },{
-                        mood: 'normal',
-                        quantity: 200
-                    }]
-                },{
-                    hashtag: '#freedomhackday',
-                    quantity: 500,
-                    moods: [{
-                        mood: 'happy',
-                        quantity: 300
-                    },{
-                        mood: 'sad',
-                        quantity: 100
-                    },{
-                        mood: 'normal',
-                        quantity: 100
-                    }]
-                },{
-                    hashtag: '#java',
-                    quantity: 1340,
-                    moods: [{
-                        mood: 'happy',
-                        quantity: 340
-                    },{
-                        mood: 'sad',
-                        quantity: 500
-                    },{
-                        mood: 'normal',
-                        quantity: 500
-                    }]
-                },{
-                    hashtag: '#java',
-                    quantity: 1340,
-                    moods: [{
-                        mood: 'happy',
-                        quantity: 340
-                    },{
-                        mood: 'sad',
-                        quantity: 500
-                    },{
-                        mood: 'normal',
-                        quantity: 500
-                    }]
-                }]
-            });
-        });
     }
 }
 

@@ -1,6 +1,7 @@
 'use strict';
 
-var base = require('../lib/base'),
+const
+    base = require('../lib/base'),
     validate = require('validate.js'),
     moodsEnum = require('../../app/models/mood_enum'),
     moodService = require('../../app/services/mood.service')();
@@ -9,9 +10,8 @@ module.exports = base.Resource.extend({
     needsToken: ['post', 'get'],
 
     post: function() {
-        var self = this;
-
-        var errors = validate(self.request.body, { 
+        let self = this,
+            errors = validate(self.request.body, { 
             mood: {
                 presence: true
             },
@@ -33,7 +33,7 @@ module.exports = base.Resource.extend({
             company: self.request.user.company.id,
             mood: self.request.body.mood,
             comment: self.request.body.comment
-        }, function(err, newMood) {
+        }, (err, newMood) => {
             if (err) {
                 return self.handleError(err);
             }
@@ -42,11 +42,12 @@ module.exports = base.Resource.extend({
         });
     },
 
-    get: function() {
-        var self = this,
+    get: function () {
+        let self = this,
             page = parseInt(self.request.query.page);
 
-        moodService.findAllWithPage(self.request.user.company.id, page ? page : 1, function(err, moods, totalPages, moodsCount) {
+        moodService.findAll(self.request.user.company.id, { page: page ? page : 1 },
+            (err, moods, totalPages, moodsCount) => {
             if (err) {
                 return self.handleError(err);
             }

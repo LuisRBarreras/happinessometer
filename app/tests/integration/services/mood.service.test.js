@@ -17,6 +17,7 @@ const
     Mood = require('../../../models/mood'),
     moodEnum = require('../../../models/mood_enum'),
     moodService = require('../../../services/mood.service')(),
+    TestUtils = require('../utils/test.utils'),
     User = require('../../../models/user'),
     userService = require('../../../services/user.service')();
 
@@ -41,7 +42,7 @@ describe('MoodService', () => {
                 return done(err);
             }
 
-            createCompanies([nearsoftCompanyConfig, acmeCompanyConfig], (err, results) => {
+            TestUtils.createCompanies([nearsoftCompanyConfig, acmeCompanyConfig], (err, results) => {
                 if (err) {
                     return done(err);
                 }
@@ -56,17 +57,7 @@ describe('MoodService', () => {
 
     after(done => {
         if (db) {
-            async.parallel([
-                cb => {
-                    Mood.remove({}, cb);
-                },
-                cb => {
-                    Company.remove({}, cb);
-                },
-                cb => {
-                    User.remove({}, cb);
-                }
-            ], () => {
+            TestUtils.deleteModels([Mood, Company, User], () => {
                 db.disconnect();
                 done();
             });
@@ -116,55 +107,35 @@ describe('MoodService', () => {
             });
         });
 
-        describe('when 2 users exists', () => {
+        describe('when 2 users exists from different Companies', () => {
             let userFromNearsoft, userFromAcme;
 
             before(done => {
-                const userFromNearsoftConfig = {
-                    company: nearsoftCompany.id,
-                    username: 'user1',
-                    password: '123',
-                    name: {
-                        first: 'User',
-                        last: 'One'
-                    },
-                    email: 'user1@nearsoft.com',
-                    enabled: true,
-                }, userFromAcmeConfig = {
-                    company: acmeCompany.id,
-                    username: 'user2',
-                    password: '123',
-                    name: {
-                        first: 'User',
-                        last: 'Two'
-                    },
-                    email: 'user2@acme.com',
-                    enabled: true,
-                };
+                if (!nearsoftCompany || !acmeCompany) {
+                    return done(new Error('No nearsoftCompany nor acmeCompany'));
+                }
 
-                createActiveUsers([userFromNearsoftConfig, userFromAcmeConfig], (err, results) => {
+                TestUtils.generateUsersForCompanies([{
+                    company: nearsoftCompany,
+                    total: 1
+                }, {
+                    company: acmeCompany,
+                    total: 1
+                }], (err, users) => {
                     if (err) {
                         return done(err);
                     }
-                    userFromNearsoft = results[0];
-                    userFromAcme = results[1];
+                    userFromNearsoft = users[0][0];
+                    userFromAcme = users[1][0];
 
                     done();
                 });
             });
 
             after(done => {
-                if (db) {
-                    async.parallel([
-                        cb => {
-                            Mood.remove({}, cb);
-                        }
-                    ], () => {
-                        done();
-                    });
-                } else {
+                TestUtils.deleteModels([Mood, User], () => {
                     done();
-                }
+                });
             });
 
             it('with mood data and existing company and user should succeed', done => {
@@ -192,227 +163,171 @@ describe('MoodService', () => {
         });
     });
 
-    describe('#findAllWithPage', () => {
-        before(function(done) {
-            createMoodsForCompanies([{
-                    company: nearsoftCompany,
-                    totalMoods: 35
-                }, {
-                    company: acmeCompany,
-                    totalMoods: 5
-                }], () => {
-                    done();
-                })
-        });
+    describe('With 10 users from Nearsoft and 10 users from Acme', () => {
+        let usersFromNearsoft, usersFromAcme;
 
-        after(function(done) {
-            async.parallel([
-                callback => {
-                    Mood.remove({}, callback);
-                }
-            ], () => {
-                done();
-            });
-        });
+        before((done) => {
+            if (!nearsoftCompany || !acmeCompany) {
+                return done(new Error('No nearsoftCompany nor acmeCompany'));
+            }
 
-        it('with page=1 should return the correct number of moods', function(done) {
-            moodService.findAllWithPage(nearsoftCompany.id, 1, function(err, moods, pageCount, itemCount) {
-                should.not.exist(err);
-                moods.length.should.be.equal(30);
-                pageCount.should.be.equal(2);
-                itemCount.should.be.equal(40);
-                done();
-            });
-        });
-
-        it('with page=2 should return the correct number of moods', function(done) {
-            moodService.findAllWithPage(nearsoftCompany.id, 2, function(err, moods, pageCount, itemCount) {
-                should.not.exist(err);
-                moods.length.should.be.equal(5);
-                pageCount.should.be.equal(2);
-                itemCount.should.be.equal(40);
-                done();
-            });
-        });
-    });
-
-    describe('#findAllByCompanyWithPage', () => {
-        before(done => {
-            createMoodsForCompanies([{
+            TestUtils.generateUsersForCompanies([{
                 company: nearsoftCompany,
-                totalMoods: 20,
-                fromDate: moment().subtract(10, 'days').utc()
-            }, {
-                company: nearsoftCompany,
-                totalMoods: 15,
-                fromDate: moment().subtract(4, 'days').utc(),
-                plusDays: 3
-            }, {
-                company: nearsoftCompany,
-                totalMoods: 1
+                total: 10
             }, {
                 company: acmeCompany,
-                totalMoods: 5
-            }], err => {
-                done();
-            });
-        });
+                total: 10
+            }], (err, users) => {
+                if (err) {
+                    return done(err);
+                }
+                usersFromNearsoft = users[0];
+                usersFromAcme = users[1];
 
-        after(done => {
-            done();
-        });
-
-        it('with page=1 should return the correct number of moods', done => {
-            moodService.findAllByCompanyWithPage(1, nearsoftCompanyConfig.domain, null, function(err, moods, pageCount, itemCount) {
-                should.not.exist(err);
-                moods.length.should.be.equal(30);
-                pageCount.should.be.equal(2);
-                itemCount.should.be.equal(36);
-                done();
-            });
-        });
-
-        it('with page=2 should return the correct number of moods', done => {
-            moodService.findAllByCompanyWithPage(2, nearsoftCompanyConfig.domain, null, function(err, moods, pageCount, itemCount) {
-                should.not.exist(err);
-                moods.length.should.be.equal(6);
-                pageCount.should.be.equal(2);
-                itemCount.should.be.equal(36);
-                done();
-            });
-        });
-
-        it('with date rage', done => {
-            var fromDate = moment().subtract(4, 'days'),
-                toDate = fromDate.clone().add(3, 'days'),
-                dateRange = {from: fromDate, to: toDate};
-
-            moodService.findAllByCompanyWithPage(1, nearsoftCompanyConfig.domain, dateRange,
-                function(err, moods, pageCount, itemCount) {
-                    should.not.exist(err);
-                    moods.length.should.be.equal(15);
-                    pageCount.should.be.equal(1);
-                    itemCount.should.be.equal(15);
+                User.count({}, (err, count) => {
+                    logger.debug('Total users: ' + count);
                     done();
                 });
+            });
         });
+
+        after((done) => {
+            TestUtils.deleteModels([Mood, User], () => {
+                done();
+            });
+        });
+
+        describe('#findAll with page', () => {
+            before((done) => {
+                TestUtils.createMoodsForCompanies([{
+                    company: nearsoftCompany,
+                    totalMoods: 35,
+                    users: usersFromNearsoft
+                }, {
+                    company: acmeCompany,
+                    totalMoods: 5,
+                    users: usersFromAcme
+                }], () => {
+                    done();
+                });
+            });
+
+            after((done) => {
+                async.parallel([
+                    callback => {
+                        Mood.remove({}, callback);
+                    }
+                ], () => {
+                    done();
+                });
+            });
+
+            it('with page=1 should return the correct number of moods', function(done) {
+                moodService.findAll(nearsoftCompany.id, { page: 1 }, function(err, moods, pageCount, itemCount) {
+                    should.not.exist(err);
+                    moods.length.should.be.equal(30);
+                    pageCount.should.be.equal(2);
+                    itemCount.should.be.equal(35);
+                    done();
+                });
+            });
+
+            it('with page=2 should return the correct number of moods', function(done) {
+                moodService.findAll(nearsoftCompany.id, { page: 2 }, function(err, moods, pageCount, itemCount) {
+                    should.not.exist(err);
+                    moods.length.should.be.equal(5);
+                    pageCount.should.be.equal(2);
+                    itemCount.should.be.equal(35);
+                    done();
+                });
+            });
+        });
+
+        describe('#findAll with page and date range', () => {
+            before(done => {
+                TestUtils.createMoodsForCompanies([{
+                    company: nearsoftCompany,
+                    totalMoods: 10,
+                    users: usersFromNearsoft,
+                    usingDate: moment().utc().subtract(10, 'days').toDate()
+                }, {
+                    company: nearsoftCompany,
+                    totalMoods: 10,
+                    users: usersFromNearsoft,
+                    usingDate: moment().utc().subtract(7, 'days').toDate()
+                }, {
+                    company: nearsoftCompany,
+                    totalMoods: 15,
+                    users: usersFromNearsoft,
+                    usingDate: moment().utc().subtract(5, 'days').toDate()
+                }, {
+                    company: nearsoftCompany,
+                    users: usersFromNearsoft,
+                    totalMoods: 1
+                }, {
+                    company: acmeCompany,
+                    users: usersFromAcme,
+                    totalMoods: 5
+                }], err => {
+
+                    logger.debug('----------');
+                    Mood.find({ company: nearsoftCompany.id })
+                        .sort({ createdAt: -1 })
+                        .exec((err, moods) => {
+                            for (let i = 0; i < moods.length; ++i) {
+                                let createdAt = moment(moods[i].createdAt),
+                                    daysDiff = moment().diff(createdAt, 'days');
+                                logger.debug(createdAt.utc().format('YYYY MM DD') + "-" + daysDiff);
+                            }
+
+                            done();
+                        });
+                });
+            });
+
+            after(done => {
+                TestUtils.deleteModels([Mood, User], () => {
+                    done();
+                });
+            });
+
+            it('with page=1 should return the correct number of moods', done => {
+                moodService.findAll(nearsoftCompany.id, { page: 1 }, 
+                    (err, moods, pageCount, itemCount) => {
+                    should.not.exist(err);
+                    moods.length.should.be.equal(30);
+                    pageCount.should.be.equal(2);
+                    itemCount.should.be.equal(36);
+                    done();
+                });
+            });
+
+            it('with page=2 should return the correct number of moods', done => {
+                moodService.findAll(nearsoftCompany.id, { page: 2 }, 
+                    (err, moods, pageCount, itemCount) => {
+                    should.not.exist(err);
+                    moods.length.should.be.equal(6);
+                    pageCount.should.be.equal(2);
+                    itemCount.should.be.equal(36);
+                    done();
+                });
+            });
+
+            it('without page but with date rage', done => {
+                var fromDate = moment().utc().subtract(10, 'days').toDate(),
+                    toDate = moment().utc().subtract(5, 'days').toDate(),
+                    dateRange = {from: fromDate, to: toDate};
+
+                moodService.findAll(nearsoftCompany.id, { dateRange: dateRange },
+                    (err, moods, pageCount, itemCount) => {
+                    should.not.exist(err);
+                    moods.length.should.be.equal(30);
+                    pageCount.should.be.equal(2);
+                    itemCount.should.be.equal(35);
+                    done();
+                });
+            });
+        });
+
     });
 });
-
-function createCompanies(companiesConfigArray, callback) {
-    'use strict';
-
-    let companyCreationFunctionArray = _.map(companiesConfigArray, companyConfig => {
-        return callback => {
-            companyService.createNewCompany(companyConfig, (err, newCompany) => {
-                callback(err, newCompany);
-            });
-        };
-    });
-
-    async.parallel(companyCreationFunctionArray, (err, results) => {
-        callback(err, results);
-    });
-}
-
-function createActiveUsers(userConfigArray, callback) {
-    'use strict';
-
-    let userCreationFunctionArray = _.map(userConfigArray, userConfig => {
-        return callback => {
-            User.create(userConfig, (err, newUser) => {
-                if (err) {
-                    logger.error(err.message);
-                }
-                userService.findUserByEmail(newUser.email, (err, loadedUser) => {
-                    callback(err, loadedUser);
-                });
-            });
-        };
-    });
-
-    async.parallel(userCreationFunctionArray, (err, results) => {
-        callback(err, results);
-    });
-}
-
-function findCompanies(companiesConfigArray, callback) {
-    var companyCreationFunctionArray;
-
-    if (companiesConfigArray) {
-        companyCreationFunctionArray = _.map(companiesConfigArray, function(companyConfig) {
-            return function(callback) {
-                companyService.findWithDomain(companyConfig.domain, function (err, newCompany) {
-                    callback(err, newCompany);
-                });
-            }
-        });
-
-        async.parallel(companyCreationFunctionArray, function (err, results) {
-            callback(err, results);
-        });
-    } else {
-        callback(new Error('No companiesConfigArray provided.'));
-    }
-}
-
-// [{company: x, totalMoods: y, fromDate: xx, plusDays: yy}, ...]
-function createMoodsForCompanies(moodsConfig, callback) {
-    var moodsToCreate = new Array();
-    if (moodsConfig) {
-        _.forEach(moodsConfig, function (moodConfig) {
-            if (moodConfig.company && moodConfig.company._id && moodConfig.totalMoods) {
-                for (var i = 0; i < moodConfig.totalMoods; ++i) {
-                    moodsToCreate.push(
-                        createMoodConfig(moodEnum[_.random(0, 7)], moodConfig));
-                }
-            }
-        });
-
-        async.each(moodsToCreate, function (mood, innerCallback) {
-            moodService.setMood(mood, function(err, m) {
-                if (err) {
-                    return innerCallback(err);
-                }
-                innerCallback();
-            });
-        }, function (err) {
-            callback(err);
-        });
-    } else {
-        callback(new Error('No moodsConfig provided.'));
-    }
-
-    function createMoodConfig(mood, moodConfig) {
-        var newMood = {
-            mood: mood,
-            comment: "I'm feeling " + mood,
-            company: moodConfig.company._id
-        };
-
-        if (moodConfig.fromDate) {
-            if (moodConfig.plusDays) {
-                newMood.createdAt = moodConfig.fromDate.clone().add(_.random(0, moodConfig.plusDays), 'days').utc().toDate();
-            } else {
-                newMood.createdAt = moodConfig.fromDate.toDate();
-            }
-        }
-        return newMood;
-    };
-}
-
-function deleteCompaniesAndMoods(done) {
-    async.parallel([
-        function(callback) {
-            companyService.deleteWithDomain(nearsoftCompanyConfig.domain, callback);
-        },
-        function(callback) {
-            companyService.deleteWithDomain('@acme.org', callback);
-        },
-        function(callback) {
-            Mood.remove({}, callback);
-        }
-    ], function() {
-        done();
-    });
-}

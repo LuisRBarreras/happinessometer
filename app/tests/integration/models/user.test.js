@@ -8,7 +8,8 @@ var assert = require('assert'),
     moment = require('moment'),
     config = require('../../../../config/config'),
     Company = require('../../../models/company'),
-    User = require('../../../models/user');
+    User = require('../../../models/user'),
+    TestUtils = require('../utils/test.utils');
 
 describe('User', function() {
     var db,
@@ -40,14 +41,7 @@ describe('User', function() {
 
     after(function(done) {
         if (db) {
-            async.parallel([
-                function(cb) {
-                    User.remove({}, cb);
-                },
-                function(cb) {
-                    Company.remove({}, cb);
-                }
-            ], function() {
+            TestUtils.deleteModels([Company, User], () => {
                 db.disconnect();
                 done();
             });

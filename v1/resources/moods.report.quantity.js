@@ -1,7 +1,10 @@
 'use strict';
 
-var base = require('../lib/base'),
-    moodService = require('../../app/services/mood.service')();
+const
+    base = require('../lib/base'),
+    logger = require('../../app/utils/logger'),
+    moodService = require('../../app/services/mood.service')(),
+    quantityReport = require('../../app/services/quantityReport.service')();
 
 module.exports = base.Resource.extend({
     needsToken: ['get'],
@@ -9,10 +12,12 @@ module.exports = base.Resource.extend({
     get: function() {
         var self = this;
 
-        moodService.quantityReport(self.request.user.company.id, function(error, aggregation) {
-            if (error) return self.dispatchError(error);
-            console.log(aggregation);
-            return self.response.json(aggregation);
+        quantityReport.run(self.request.user.company.id, {}, (err, results) => {
+            if (err) {
+                return self.dispatchError(err);
+            }
+            logger.debug(JSON.stringify(results));
+            return self.response.json(results);
         });
     }
 });

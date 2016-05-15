@@ -10,7 +10,8 @@ var config = require('../../../../config/config'),
     logger = require('../../../utils/logger'),
     Company = require('../../../models/company'),
     Mood = require('../../../models/mood'),
-    User = require('../../../models/user');
+    User = require('../../../models/user'),
+    TestUtils = require('../utils/test.utils');
 
 describe('Mood', function() {
     var db;
@@ -27,17 +28,7 @@ describe('Mood', function() {
 
     after(function(done) {
         if (db) {
-            async.series([
-                function (cb) {
-                    Mood.remove({}, cb);
-                },
-                function (cb) {
-                    Company.remove({}, cb);
-                },
-                function (cb) {
-                    User.remove({}, cb);
-                }
-            ], function () {
+            TestUtils.deleteModels([Mood, Company, User], () => {
                 db.disconnect();
                 done();
             });
