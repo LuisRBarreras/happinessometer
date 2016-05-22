@@ -25,3 +25,5 @@ class DateUtils {
         return criteria;
     }
 }
+
+module.exports = DateUtils;

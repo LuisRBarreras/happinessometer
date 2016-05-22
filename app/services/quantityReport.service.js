@@ -19,8 +19,7 @@ class QuantityReportService {
     }
 
     run(companyId, params, callback) {
-        var self = this,
-            options = {
+        var options = {
             map: function () {
                 emit(this.user, this.mood);
             },
@@ -45,43 +44,61 @@ class QuantityReportService {
             options.query.createdAt = DateUtils.createDateRangeCriteriaIfAny(params.dateRange);
         }
 
-        Mood.mapReduce(options, (err, results) => {
+        Mood.count({ company: companyId }, (err, count) => {
             if (err) {
                 return errorsUtils.handleMongoDBError(err, callback);
             }
 
-            let moods = {};
-            _(moodEnum).forEach((mood) => {
-                moods[mood] = 0;
-            });
-
-            _(results).forEach((user) => {
-                let maxMood = '', maxCount = 0;
-                for (let moodAttr in user.value) {
-                    if (user.value[moodAttr] > maxCount) {
-                        maxCount = user.value[moodAttr];
-                        maxMood = moodAttr;
+            if (count > 0) {
+                Mood.mapReduce(options, (err, results) => {
+                    if (err) {
+                        return errorsUtils.handleMongoDBError(err, callback);
                     }
-                }
 
-                moods[maxMood] = moods[maxMood] + 1;
-            });
-
-
-            User.count({
-                company: companyId,
-                enabled: true
-            }).exec((err, count) => {
-                if (err) {
-                    return errorsUtils.handleMongoDBError(err, callback);
-                }
-
-                // add count of users without mood to normal mood
-                moods.normal += (count - results.length);
-                callback(err, {
-                    totalUsers: count,
-                    moods: this._toArrayOfMoods(moods)
+                    this._countUsersAndRespond(companyId, this._buildMoods(results), results, callback);
                 });
+            } else {
+                this._countUsersAndRespond(companyId, { normal: 0 }, 0, callback);
+            }
+        });
+    }
+
+    // TODO rafael - implement a way to prioratize moods when they have the same total.
+    _buildMoods(results) {
+        let moods = {};
+        moodEnum.forEach((mood) => {
+            moods[mood] = 0;
+        });
+
+        results.forEach((user) => {
+            let maxMood = '', maxCount = 0;
+            for (let moodAttr in user.value) {
+                if (user.value[moodAttr] > maxCount) {
+                    maxCount = user.value[moodAttr];
+                    maxMood = moodAttr;
+                }
+            }
+
+            moods[maxMood] = moods[maxMood] + 1;
+        });
+
+        return moods;
+    }
+
+    _countUsersAndRespond(companyId, moods, results, callback) {
+        User.count({
+            company: companyId,
+            enabled: true
+        }).exec((err, count) => {
+            if (err) {
+                return errorsUtils.handleMongoDBError(err, callback);
+            }
+
+            // add count of users without mood to normal mood
+            moods.normal += (count - results.length);
+            callback(err, {
+                totalUsers: count,
+                moods: this._toArrayOfMoods(moods)
             });
         });
     }
@@ -91,7 +108,7 @@ class QuantityReportService {
         for (let attr in moodsObject) {
             array.push({
                 mood: attr,
-                total: moodsObject[attr]
+                total: moodsObject[attr] || 0
             });
         }
         return array;

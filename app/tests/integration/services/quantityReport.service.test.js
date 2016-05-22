@@ -30,7 +30,7 @@ const nearsoftCompanyConfig = {
         domain: '@acme.org'
     };
 
-describe.only('QuantityReportService', () => {
+describe('QuantityReportService', () => {
     let db,
         nearsoftCompany,
         acmeCompany;
@@ -95,7 +95,7 @@ describe.only('QuantityReportService', () => {
         });
 
 
-        describe('_', () => {
+        describe('with 3600 mood entries from Nearsoft and 50 from Acme', () => {
             before(done => {
                 TestUtils.createMoodsForCompanies([{
                     company: nearsoftCompany,
@@ -125,10 +125,11 @@ describe.only('QuantityReportService', () => {
                 });
             });
 
-            it('XX', (done) => {
+            it('Quantity Report should be ok', (done) => {
                 quantityReportService.run(nearsoftCompany.id, null, (err, results) => {
                     console.log('-------');
                     console.log(results);
+                    results.totalUsers.should.be.equal(50);
                     done();
                 });
             });

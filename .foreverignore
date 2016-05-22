@@ -1,3 +1,7 @@
+.foreverignore
 happinessometer.log
 node_modules/
-mongodb_queries.txt
+scripts/
+mongodb-migrations/
+*.log
+*.txt
