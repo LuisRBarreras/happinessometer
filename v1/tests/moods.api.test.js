@@ -86,7 +86,7 @@ describe("/v1/moods", function() {
             });
 
             it('create mood without Token should fail with Bad Request', function (done) {
-                superagent.post(baseUrl + '/moods')
+                superagent.post(baseUrl + '/users/me/moods')
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
                         should.exist(err);
@@ -99,7 +99,7 @@ describe("/v1/moods", function() {
             });
 
             it('create mood without data should fail with Bad Request', function (done) {
-                superagent.post(baseUrl + '/moods')
+                superagent.post(baseUrl + '/users/me/moods')
                     .set('Accept', 'application/json')
                     .set('Authorization', 'Token ' + userToken)
                     .end(function(err, res) {
@@ -113,7 +113,7 @@ describe("/v1/moods", function() {
             });
 
             it('create mood should succeed with Ok', function (done) {
-                superagent.post(baseUrl + '/moods')
+                superagent.post(baseUrl + '/users/me/moods')
                     .send({ mood: 'love', comment: 'love it! it is working!' })
                     .set('Accept', 'application/json')
                     .set('Authorization', 'Token ' + userToken)

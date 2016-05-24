@@ -50,7 +50,7 @@ describe("/v1/authenticate", function() {
         var jsonUser, postRes;
 
         before(function (done) {
-            superagent.post(baseUrl + '/companies')
+            superagent.post(baseUrl + '/admin/companies')
                 .send({ name: 'Email Inc.', domain: '@email.com' })
                 .set('Accept', 'application/json')
                 .end(function(err, res) {
@@ -119,8 +119,8 @@ describe("/v1/authenticate", function() {
                 jsonToken.token.should.be.ok;
             });
 
-            it('GET-ing myinfo should succeed', function (done) {
-                superagent.get(baseUrl + '/myinfo')
+            it('GET-ing users info should succeed', function (done) {
+                superagent.get(baseUrl + '/users/me')
                     .set('Authorization', 'Token ' + jsonToken.token)
                     .set('x', 'application/json')
                     .end(function(err, res) {

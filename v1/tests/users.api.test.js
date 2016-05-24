@@ -58,7 +58,7 @@ describe("/v1/users", function() {
 
     describe('When Company Email Inc. exist', function () {
         before(function (done) {
-            superagent.post(baseUrl + '/companies')
+            superagent.post(baseUrl + '/admin/companies')
                 .send({ name: 'Email Inc.', domain: '@email.com' })
                 .set('Accept', 'application/json')
                 .end(function(err, res) {

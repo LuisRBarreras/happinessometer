@@ -7,40 +7,7 @@ const
     moodService = require('../../app/services/mood.service')();
 
 module.exports = base.Resource.extend({
-    needsToken: ['post', 'get'],
-
-    post: function() {
-        let self = this,
-            errors = validate(self.request.body, { 
-            mood: {
-                presence: true
-            },
-            comment: {
-                presence: true
-            }
-        });
-
-        if (errors) {
-            return self.dispatchValidationErrors("There are errors", errors);
-        } else if (moodsEnum.indexOf(self.request.body.mood) < 0) {
-            return self.dispatchValidationErrors("There are errors", {
-                mood: ["Mood value is not valid"]
-            });
-        }
-
-        moodService.setMood({
-            user: self.request.user.id,
-            company: self.request.user.company.id,
-            mood: self.request.body.mood,
-            comment: self.request.body.comment
-        }, (err, newMood) => {
-            if (err) {
-                return self.handleError(err);
-            }
-
-            return self.response.json(newMood);
-        });
-    },
+    needsToken: ['get'],
 
     get: function () {
         let self = this,

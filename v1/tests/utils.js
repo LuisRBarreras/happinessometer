@@ -10,7 +10,7 @@ var port = 3000,
     baseUrl = "http://localhost:" + port + "/v1";
 
 function createCompany(companyData, callback) {
-    superagent.post(baseUrl + '/companies')
+    superagent.post(baseUrl + '/admin/companies')
         .send(companyData)
         .set('Accept', 'application/json')
         .end(function(err, res) {
