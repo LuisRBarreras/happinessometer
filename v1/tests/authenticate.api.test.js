@@ -57,7 +57,7 @@ describe("/v1/authenticate", function() {
                     if (err) {
                         return done(err);
                     }
-                    superagent.post(baseUrl + '/users')
+                    superagent.post(baseUrl + '/pendingusers')
                         .send({ email: 'someone@email.com' })
                         .set('Accept', 'application/json')
                         .end(function(err1, res2) {

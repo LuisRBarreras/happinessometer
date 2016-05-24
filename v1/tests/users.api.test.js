@@ -73,7 +73,7 @@ describe("/v1/users", function() {
             var postErr, postRes;
 
             before(function (done) {
-                superagent.post(baseUrl + '/users')
+                superagent.post(baseUrl + '/pendingusers')
                     .send({ email: 'someone@email.com' })
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
@@ -87,7 +87,7 @@ describe("/v1/users", function() {
                 should.not.exist(postErr);
                 console.log("Res: " + JSON.stringify(postRes));
                 postRes.status.should.be.equal(status.CREATED);
-                postRes.header.location.should.be.equal('/users/someone@email.com');
+                postRes.header.location.should.match(/\/users\/[a-zA-Z0-9]+/);
                 postRes.header["content-type"].should.containEql('application/json');
             });
 

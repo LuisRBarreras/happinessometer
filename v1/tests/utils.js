@@ -20,7 +20,7 @@ function createCompany(companyData, callback) {
 
 function createNewActiveUser(userData, callback) {
     var r1;
-    superagent.post(baseUrl + '/users')
+    superagent.post(baseUrl + '/pendingusers')
         .send({ email: userData.email })
         .set('Accept', 'application/json')
         .end(function(err1, res1) {
