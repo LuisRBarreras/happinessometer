@@ -50,14 +50,14 @@ describe("/v1/authenticate", function() {
         var jsonUser, postRes;
 
         before(function (done) {
-            superagent.post(baseUrl + '/companies')
+            superagent.post(baseUrl + '/admin/companies')
                 .send({ name: 'Email Inc.', domain: '@email.com' })
                 .set('Accept', 'application/json')
                 .end(function(err, res) {
                     if (err) {
                         return done(err);
                     }
-                    superagent.post(baseUrl + '/users')
+                    superagent.post(baseUrl + '/pendingusers')
                         .send({ email: 'someone@email.com' })
                         .set('Accept', 'application/json')
                         .end(function(err1, res2) {
@@ -65,7 +65,7 @@ describe("/v1/authenticate", function() {
                                 return done(err1);
                             }
                             PendingUser.findOne({ email: 'someone@email.com' }, 'code email', function (err, pendingUser) {
-                                superagent.post(baseUrl + '/users/verify')
+                                superagent.post(baseUrl + '/pendingusers/' + pendingUser.code + '/actions/verify')
                                     .query({ code: pendingUser.code })
                                     .send({
                                         code: pendingUser.code,
@@ -119,8 +119,8 @@ describe("/v1/authenticate", function() {
                 jsonToken.token.should.be.ok;
             });
 
-            it('GET-ing myinfo should succeed', function (done) {
-                superagent.get(baseUrl + '/myinfo')
+            it('GET-ing users info should succeed', function (done) {
+                superagent.get(baseUrl + '/users/me')
                     .set('Authorization', 'Token ' + jsonToken.token)
                     .set('x', 'application/json')
                     .end(function(err, res) {

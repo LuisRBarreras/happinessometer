@@ -1,21 +1,21 @@
 'use strict';
 
-var base = require('../lib/base'),
+const
+    base = require('../lib/base'),
     emailService = require('../../app/services/email.service'),
     userService = require('../../app/services/user.service')(emailService);
 
 module.exports = base.Resource.extend({
-    get: function() {
-        var self = this,
-            json;
+    get: function(req, res) {
+        let json;
 
-        userService.findPendingUserOrUserByEmail(self.request.params.email, function(err, user) {
+        userService.findPendingUserOrUserByEmail(req.params.email, (err, user) => {
             if (err) {
-                return self.handleError(err);
+                return this.handleError(err);
             }
 
             if (!user) {
-               return self.dispatchNotFoundError('No user found with email ' + self.request.params.email); 
+               return this.dispatchNotFoundError('No user found with email ' + req.params.email); 
             }
 
             json = {
@@ -27,7 +27,7 @@ module.exports = base.Resource.extend({
                 json.lastName = user.name.last;
                 json.username = user.username;
             }
-            return self.response.json(json);
+            return res.json(json);
         });
     }
 });

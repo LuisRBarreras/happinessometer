@@ -58,7 +58,7 @@ describe("/v1/users", function() {
 
     describe('When Company Email Inc. exist', function () {
         before(function (done) {
-            superagent.post(baseUrl + '/companies')
+            superagent.post(baseUrl + '/admin/companies')
                 .send({ name: 'Email Inc.', domain: '@email.com' })
                 .set('Accept', 'application/json')
                 .end(function(err, res) {
@@ -73,7 +73,7 @@ describe("/v1/users", function() {
             var postErr, postRes;
 
             before(function (done) {
-                superagent.post(baseUrl + '/users')
+                superagent.post(baseUrl + '/pendingusers')
                     .send({ email: 'someone@email.com' })
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
@@ -87,7 +87,7 @@ describe("/v1/users", function() {
                 should.not.exist(postErr);
                 console.log("Res: " + JSON.stringify(postRes));
                 postRes.status.should.be.equal(status.CREATED);
-                postRes.header.location.should.be.equal('/users/someone@email.com');
+                postRes.header.location.should.match(/\/users\/[a-zA-Z0-9]+/);
                 postRes.header["content-type"].should.containEql('application/json');
             });
 
@@ -98,8 +98,7 @@ describe("/v1/users", function() {
                     pendingUser.code.should.be.ok;
                     pendingUser.email.should.be.equal('someone@email.com');
 
-                    superagent.get(baseUrl + '/users/verify')
-                        .query({ code: pendingUser.code })
+                    superagent.get(baseUrl + '/pendingusers/' + pendingUser.code)
                         .set('Accept', 'application/json')
                         .end(function(err, res) {
                             should.not.exist(err);
@@ -115,8 +114,7 @@ describe("/v1/users", function() {
             });
 
             it('GET-ing user to verify with incorrect code should fail', function (done) {
-                superagent.get(baseUrl + '/users/verify')
-                    .query({ code: 'XYZ' })
+                superagent.get(baseUrl + '/pendingusers/XYZ')
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
                         should.exist(err);
@@ -126,11 +124,11 @@ describe("/v1/users", function() {
             });
 
             it('GET-ing user to verify without code should fail', function (done) {
-                superagent.get(baseUrl + '/users/verify')
+                superagent.get(baseUrl + '/pendingusers')
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
                         should.exist(err);
-                        err.status.should.be.equal(status.BAD_REQUEST);
+                        err.status.should.be.equal(status.METHOD_NOT_ALLOWED);
                         done();
                     });
             });
@@ -139,7 +137,7 @@ describe("/v1/users", function() {
                 var postErr, postRes;
 
                 before(function (done) {
-                    superagent.get(baseUrl + '/users/someone@email.com')
+                    superagent.get(baseUrl + '/admin/users/someone@email.com')
                         .set('Accept', 'application/json')
                         .end(function(err, res) {
                             postErr = err;
@@ -158,49 +156,37 @@ describe("/v1/users", function() {
                     result.status.should.be.equal("pending");
                     result.email.should.be.equal("someone@email.com");
                 });
+            });
 
-                describe('POST-ing user someone@email.com to verify', function () {
-                    before(function (done) {
-                        PendingUser.findOne({ email: 'someone@email.com' }, 'code email',
-                            function (err, pendingUser) {
-                                if (err) {
-                                    return done(err);
-                                }
-                                superagent.post(baseUrl + '/users/verify')
-                                    .query({ code: pendingUser.code })
-                                    .send({
-                                        code: pendingUser.code,
-                                        email: 'someone@email.com',
-                                        firstName: 'Some',
-                                        lastName: 'One',
-                                        username: 'someone',
-                                        password: 'someone123'
-                                    })
-                                    .set('Accept', 'application/json')
-                                    .end(function(err, res) {
-                                        postErr = err;
-                                        postRes = res;
-                                        done();
-                                    });
-                            });
-                    });
+            describe('POST-ing user someone@email.com to verify', function () {
+                before(function (done) {
+                    PendingUser.findOne({ email: 'someone@email.com' }, 'code email',
+                        function (err, pendingUser) {
+                            if (err) {
+                                return done(err);
+                            }
+                            superagent.post(baseUrl + '/pendingusers/' + pendingUser.code + '/actions/verify')
+                                .query({ code: pendingUser.code })
+                                .send({
+                                    code: pendingUser.code,
+                                    email: 'someone@email.com',
+                                    firstName: 'Some',
+                                    lastName: 'One',
+                                    username: 'someone',
+                                    password: 'someone123'
+                                })
+                                .set('Accept', 'application/json')
+                                .end(function(err, res) {
+                                    postErr = err;
+                                    postRes = res;
+                                    done();
+                                });
+                        });
+                });
 
-                    it('should succeed', function () {
-                        should.not.exist(postErr);
-                        postRes.status.should.be.equal(status.CREATED);
-                        postRes.headers.location.should.be.equal('/users/someone@email.com');
-                    });
-
-                    it('GET-ing all users should fail because authentication', function (done) {
-                        superagent.get(baseUrl + '/users')
-                            .set('Authorization', 'Token 123')
-                            .set('x', 'application/json')
-                            .end(function(err, res) {
-                                should.exist(err);
-                                err.status.should.be.equal(status.UNAUTHORIZED);
-                                done();
-                            });
-                    });
+                it('should succeed', function () {
+                    postRes.status.should.be.equal(status.CREATED);
+                    postRes.headers.location.should.be.equal('/users/someone@email.com');
                 });
             });
         });

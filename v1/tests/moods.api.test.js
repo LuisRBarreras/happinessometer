@@ -1,49 +1,39 @@
 'use strict';
 
-var async = require('async'),
+const
+    async = require('async'),
     http = require('http'),
     mongoose = require('mongoose'),
     should = require('should'),
     status = require('http-status'),
     superagent = require('superagent');
 
-var app = require('../../app'),
+const
+    app = require('../../app'),
     config = require('../../config/config'),
     logger = require('../../app/utils/logger'),
     Company = require('../../app/models/company'),
     User = require('../../app/models/user'),
     PendingUser = require('../../app/models/pendingUser'),
     Mood = require('../../app/models/mood'),
-    utils = require('./utils');
+    ApiTestUtils = require('./api.test.utils'),
+    IntegrationTestingUtils = require('../../app/tests/integration/utils/test.utils');
 
-describe("/v1/moods", function() {
-    var db,
+describe("/v1/moods", () => {
+    let db,
         port = 3000,
         baseUrl = "http://localhost:" + port + "/v1",
         server;
 
-    before(function (done) {
+    before((done) => {
         app.set('port', port);
         server = http.createServer(app);
         server.listen(port);
         done();
     });
 
-    after(function (done) {
-        async.series([
-            function (cb) {
-                Mood.remove({}, cb);
-            },
-            function (cb) {
-                PendingUser.remove({}, cb);
-            },
-            function (cb) {
-                User.remove({}, cb);
-            },
-            function (cb) {
-                Company.remove({}, cb);
-            }
-        ], function () {
+    after((done) => {
+        IntegrationTestingUtils.deleteModels([Mood, PendingUser, User, Company], () => {
             if (server) {
                 server.close();
             }
@@ -51,14 +41,14 @@ describe("/v1/moods", function() {
         });
     });
 
-    describe('With a Company Acme Inc.', function () {
-        var companyData = {
+    describe('With a Company Acme Inc.', () => {
+        let companyData = {
             name: 'Acme Inc.',
             domain: '@acme.com'
         };
 
-        before(function (done) {
-            utils.createCompany(companyData, function (err) {
+        before((done) => {
+            ApiTestUtils.createCompany(companyData, (err) => {
                 if (err) {
                     return done(err);
                 }
@@ -66,7 +56,7 @@ describe("/v1/moods", function() {
             });
         });
 
-        describe('With a new logged user', function () {
+        describe('With a new logged user', () => {
             var userData = {
                 email: 'someone@acme.com',
                 firstName: 'Some',
@@ -75,8 +65,8 @@ describe("/v1/moods", function() {
                 password: 'someone123'
             }, userToken;
 
-            before(function (done) {
-                utils.createUserAndLoginIn(userData, function (err, token) {
+            before((done) => {
+                ApiTestUtils.createUserAndLoginIn(userData, (err, token) => {
                     if (err) {
                         return done(err);
                     }
@@ -85,10 +75,16 @@ describe("/v1/moods", function() {
                 });
             });
 
-            it('create mood without Token should fail with Bad Request', function (done) {
-                superagent.post(baseUrl + '/moods')
+            after((done) => {
+                IntegrationTestingUtils.deleteModels([Mood, PendingUser, User], () => {
+                    done();
+                });
+            });
+
+            it('create mood without Token should fail with Bad Request', (done) => {
+                superagent.post(baseUrl + '/users/me/moods')
                     .set('Accept', 'application/json')
-                    .end(function(err, res) {
+                    .end((err, res) => {
                         should.exist(err);
                         res.status.should.be.equal(status.BAD_REQUEST);
                         var result = JSON.parse(res.text);
@@ -98,11 +94,11 @@ describe("/v1/moods", function() {
                     });
             });
 
-            it('create mood without data should fail with Bad Request', function (done) {
-                superagent.post(baseUrl + '/moods')
+            it('create mood without data should fail with Bad Request', (done) => {
+                superagent.post(baseUrl + '/users/me/moods')
                     .set('Accept', 'application/json')
                     .set('Authorization', 'Token ' + userToken)
-                    .end(function(err, res) {
+                    .end((err, res) => {
                         should.exist(err);
                         res.status.should.be.equal(status.BAD_REQUEST);
                         var result = JSON.parse(res.text);
@@ -112,16 +108,15 @@ describe("/v1/moods", function() {
                     });
             });
 
-            it('create mood should succeed with Ok', function (done) {
-                superagent.post(baseUrl + '/moods')
+            it('create mood should succeed with Ok', (done) => {
+                superagent.post(baseUrl + '/users/me/moods')
                     .send({ mood: 'love', comment: 'love it! it is working!' })
                     .set('Accept', 'application/json')
                     .set('Authorization', 'Token ' + userToken)
-                    .end(function(err, res) {
+                    .end((err, res) => {
                         should.not.exist(err);
                         // TODO rgutierrez - what should answer this?
                         res.status.should.be.equal(status.OK);
-                        logger.debug(res.text);
                         var result = JSON.parse(res.text);
                         result.mood.should.be.equal('love');
                         result.comment.should.be.equal('love it! it is working!');
@@ -136,5 +131,37 @@ describe("/v1/moods", function() {
                     });
             });
         });
+
+        describe('With 10 logged users and 100 random post', () => {
+            let userTokens = [];
+
+            before((done) => {
+                ApiTestUtils.createUsersAndLoginIn(10, companyData.domain, (err, tokens) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    userTokens = tokens;
+
+                    ApiTestUtils.postRandomMoods(100, userTokens, (err) => {
+                        done();
+                    });
+                });
+            });
+
+            it('getting company moods should return the correct number of moods', (done) => {
+                logger.debug('User Token: ' + userTokens[0]);
+                superagent.get(baseUrl + '/users/me/companies/moods')
+                    .set('Accept', 'application/json')
+                    .set('Authorization', 'Token ' + userTokens[0])
+                    .end(function(err, res) {
+                        var result = JSON.parse(res.text);
+                        result.moods.length.should.be.equal(30);
+                        logger.debug(JSON.stringify(result.pagination));
+                        result.pagination.page.should.be.equal(1);
+                        result.pagination.totalItems.should.be.equal(100);
+                        done();
+                    });
+            });
+        })
     });
 });

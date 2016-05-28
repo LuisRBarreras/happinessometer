@@ -87,7 +87,15 @@ _.extend(Resource.prototype, {
                 this.validateToken(function(decodedToken) {
                     userService.findUserByEmail(decodedToken.email, function (err, user) {
                         if (err) {
+                            return that.dispatchError(new errors.InternalError('Error trying to find user with email ' + decodedToken.email));
+                        }
+
+                        if (!user) {
                             return that.dispatchError(new errors.InternalError('No user'));
+                        }
+
+                        if (!user.company || !user.company.id) {
+                            return that.dispatchError(new errors.InternalError('No company'));
                         }
 
                         that.request.user = user;
@@ -157,7 +165,11 @@ _.extend(Resource.prototype, {
 
     dispatchError: function(error) {
         var status = error.status || 500;
-        logger.error('Dispatching Error { status: ' + status + ', message: ' +(error.message || '') + ' }');
+        if (status == 400) {
+            logger.error('Dispatching Error { status: ' + status + ', message: ' + (error.message || '') + ', fieldErros: ' + JSON.stringify(error.errors) + ' }');
+        } else {
+            logger.error('Dispatching Error { status: ' + status + ', message: ' + (error.message || '') + ' }');
+        }
         this.response.status(status).send(error);
     },
 
