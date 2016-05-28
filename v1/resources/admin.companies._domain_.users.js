@@ -7,14 +7,11 @@ var base = require('../lib/base'),
     companyService = require('../../app/services/company.service')(emailService);
 
 module.exports = base.Resource.extend({
-    needsToken: ['get'],
 
-    get: function() {
-        var that = this,
-            user = that.request.decoded,
-            domain = user.email.substring(user.email.indexOf('@'));
+    get: function(req, res) {
+        let domain = req.domain;
 
-        companyService.findAllUsersInCompany(domain, function(err, users) {
+        companyService.findAllUsersInCompany(domain, (err, users) => {
             if (err) {
                 return that.handleError(err);
             }

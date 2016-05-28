@@ -9,17 +9,17 @@ const
 module.exports = base.Resource.extend({
     needsToken: ['get'],
 
-    get: function () {
-        let self = this,
-            page = parseInt(self.request.query.page);
+    get: function (req, res) {
+        let pageParam = parseInt(req.query.page),
+            page = pageParam ? pageParam : 1;
 
-        moodService.findAll(self.request.user.company.id, { page: page ? page : 1 },
+        moodService.findAll(req.user.company.id, { page: page },
             (err, moods, totalPages, moodsCount) => {
             if (err) {
-                return self.handleError(err);
+                return this.handleError(err);
             }
 
-            return self.response.json({
+            return res.json({
                 moods: moods,
                 pagination: {
                     page: page,

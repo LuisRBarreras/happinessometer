@@ -7,7 +7,8 @@ var moment = require('moment'),
     Company = require('../models/company'),
     User = require('../models/user'),
     emailService = require('../services/email.service'),
-    errorsUtils = require('../utils/errors.utils');
+    errorsUtils = require('../utils/errors.utils'),
+    logger = require('../utils/logger');
 
 var UserService = function(emailService) {
     this._emailService = emailService;
@@ -175,6 +176,7 @@ UserService.prototype.findUserByEmail = function(email, callback) {
                 return errorsUtils.handleMongoDBError(err, callback);
             }
 
+            logger.debug('User company: ' + user.company);
             return callback(err, user);
         });
 };

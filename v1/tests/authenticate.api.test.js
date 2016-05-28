@@ -65,7 +65,7 @@ describe("/v1/authenticate", function() {
                                 return done(err1);
                             }
                             PendingUser.findOne({ email: 'someone@email.com' }, 'code email', function (err, pendingUser) {
-                                superagent.post(baseUrl + '/users/verify')
+                                superagent.post(baseUrl + '/pendingusers/' + pendingUser.code + '/actions/verify')
                                     .query({ code: pendingUser.code })
                                     .send({
                                         code: pendingUser.code,

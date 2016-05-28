@@ -7,7 +7,7 @@
     "dev": ". ./devenv; forever -w ./bin/www",
     "test": "mocha --require should --require should --ui bdd app/tests/unit/**/*.test.js",
     "test-integration": ". ./testenv; mocha --timeout 15000 --require should --ui bdd app/tests/integration/**/*.test.js",
-    "test-api": ". ./apienv; mocha --require should --ui bdd v1/tests/**/*.test.js",
+    "test-api": ". ./apienv; mocha --timeout 25000 --require should --ui bdd v1/tests/**/*.test.js",
     "test-all": "npm run test; npm run test-integration; npm run test-api",
     "drop-test-db": "mongo happinessometer-test --eval 'db.dropDatabase()'",
     "drop-dev-db": "mongo happinessometer-dev --eval 'db.dropDatabase()'"

@@ -47,7 +47,7 @@ module.exports = mongoose.model('Mood',  new Schema({
             delete ret.__v;
             delete ret.id;
 
-            ret.company = company.name;
+            ret.company = company.name ? company.name : company;
             ret.user = user.email;
             return ret;
         }
