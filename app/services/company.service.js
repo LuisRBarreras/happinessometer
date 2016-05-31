@@ -1,99 +1,104 @@
 'use strict';
 
-var Company = require('../models/company'),
+const
+    Company = require('../models/company'),
     User = require('../models/user'),
     validate = require('validate.js'),
     errorsUtils = require('../utils/errors.utils');
 
-var CompanyService = function() {
-};
-
-CompanyService.prototype.createNewCompany = function(newCompanyConfig, callback) {
-    var errors = validate(newCompanyConfig, {
-        name: { presence:  true},
-        domain: { presence: true }
-    });
-
-    if (errors) {
-        return callback(errors);
+class CompanyService {
+    constructor() {
     }
 
-    var newCompany = new Company({
-        name: newCompanyConfig.name,
-        domain: newCompanyConfig.domain
-    });
+    createNewCompany(newCompanyConfig, callback) {
+        var errors = validate(newCompanyConfig, {
+            name: { presence:  true},
+            domain: { presence: true }
+        });
 
-    newCompany.save(function(err, company) {
-        if (err) {
-            return callback({
-                message: 'Error creating the Company ' + newCompanyConfig.name + '.',
-                cause: err
-            });
+        if (errors) {
+            return callback(errors);
         }
 
-        callback(err, company);
-    });
-};
+        var newCompany = new Company({
+            name: newCompanyConfig.name,
+            domain: newCompanyConfig.domain
+        });
 
-CompanyService.prototype.deleteWithDomain = function(domainName, callback) {
-    Company.findOne({ domain: domainName }, function(err, company) {
-        if (err) {
-            return callback({
-                message: 'Error finding Company with domain ' + domainName + '.',
-                cause: err
-            });
-        }
-
-        if (!company) {
-            return callback({
-                message: 'No Company with domain ' + + domainName + ' was found.'                
-            });
-        }
-
-        Company.remove({ _id: company._id }, function(err) {
+        newCompany.save(function(err, company) {
             if (err) {
                 return callback({
-                    message: 'Error deleting Company with domain ' + domainName + '.',
+                    message: 'Error creating the Company ' + newCompanyConfig.name + '.',
                     cause: err
                 });
             }
-            callback();
+
+            callback(err, company);
         });
-    });
-};
+    }
 
-CompanyService.prototype.findWithDomain = function(domainName, callback) {
-    Company.findOne({ domain: domainName }, function(err, company) {
-        if (err) {
-            return errorsUtils.handleMongoDBError(err, callback);
-        }
-        return callback(err, company);
-    });
-};
+    deleteWithDomain(domainName, callback) {
+        Company.findOne({ domain: domainName }, function(err, company) {
+            if (err) {
+                return callback({
+                    message: 'Error finding Company with domain ' + domainName + '.',
+                    cause: err
+                });
+            }
 
-CompanyService.prototype.findById = function(id, callback) {
-    Company.findOne({ _id: id }, function(err, company) {
-        if (err) {
-            return errorsUtils.handleMongoDBError(err, callback);
-        }
-        return callback(err, company);
-    });
-};
+            if (!company) {
+                return callback({
+                    message: 'No Company with domain ' + + domainName + ' was found.'                
+                });
+            }
 
-CompanyService.prototype.findAllUsersInCompany = function(domainName, callback) {
-    User.find({ email: new RegExp(domainName + "$"), enabled: true }, function(err, users) {
-        if (err) {
-            return callback({
-                message: 'Error finding the users with domain ' + domainName + '.',
-                cause: err
+            Company.remove({ _id: company._id }, function(err) {
+                if (err) {
+                    return callback({
+                        message: 'Error deleting Company with domain ' + domainName + '.',
+                        cause: err
+                    });
+                }
+                callback();
             });
-        }
+        });
+    }
 
-        return callback(err, users);
-    })
+    findWithDomain(domainName, callback) {
+        Company.findOne({ domain: domainName }, function(err, company) {
+            if (err) {
+                return errorsUtils.handleMongoDBError(err, callback);
+            }
+            return callback(err, company);
+        });
+    }
+
+    findById(id, callback) {
+        Company.findOne({ _id: id }, function(err, company) {
+            if (err) {
+                return errorsUtils.handleMongoDBError(err, callback);
+            }
+            return callback(err, company);
+        });
+    }
+
+    findAllUsersInCompany(companyId, callback) {
+        User.find({
+            company: companyId,
+            enabled: true
+        }, function(err, users) {
+            if (err) {
+                return callback({
+                    message: 'Error finding the users with domain ' + domainName + '.',
+                    cause: err
+                });
+            }
+
+            return callback(err, users);
+        });
+    }
 }
 
-
-module.exports = function() {
+module.exports = () => {
     return new CompanyService();
 }

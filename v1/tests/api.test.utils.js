@@ -90,6 +90,26 @@ function createUserAndLoginIn(userData, callback) {
     });
 };
 
+function createUsers(totalUser, companyDomain, callback) {
+    let functions = [];
+    _.range(totalUser).forEach((item) => {
+        functions.push((cb) => {
+            let email = chance.hash({length: 25}) + companyDomain;
+            createNewActiveUser({
+                email: email,
+                firstName: chance.first(),
+                lastName: chance.last(),
+                username: email,
+                password: '123'
+            }, cb);
+        });
+    });
+
+    async.parallel(functions, (err, tokens) => {
+        callback(err, tokens);
+    });
+}
+
 function createUsersAndLoginIn(totalUser, companyDomain, callback) {
     let functions = [];
     _.range(totalUser).forEach((item) => {

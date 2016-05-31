@@ -8,37 +8,29 @@ var async = require('async'),
     superagent = require('superagent');
 
 var app = require('../../app'),
+    ApiTestUtils = require('./api.test.utils'),
     config = require('../../config/config'),
     logger = require('../../app/utils/logger'),
     Company = require('../../app/models/company'),
     User = require('../../app/models/user'),
-    PendingUser = require('../../app/models/pendingUser');
+    PendingUser = require('../../app/models/pendingUser'),
+    IntegrationTestUtils = require('../../app/tests/integration/utils/test.utils');
 
-describe("/v1/users", function() {
+describe("/v1/users", () => {
     var db,
         port = 3000,
         baseUrl = "http://localhost:" + port + "/v1",
         server;
 
-    before(function (done) {
+    before((done) => {
         app.set('port', port);
         server = http.createServer(app);
         server.listen(port);
         done();
     });
 
-    after(function (done) {
-        async.series([
-            function (cb) {
-                PendingUser.remove({}, cb);
-            },
-            function (cb) {
-                User.remove({}, cb);
-            },
-            function (cb) {
-                Company.remove({}, cb);
-            }
-        ], function () {
+    after((done) => {
+        IntegrationTestUtils.deleteModels([PendingUser, User, Company], () => {
             if (server) {
                 server.close();
             }
@@ -46,22 +38,24 @@ describe("/v1/users", function() {
         });
     });
 
-    it('POST-ing a new user without a Company with domain should fail', function (done) {
+    it('POST-ing a new user without a Company with domain should fail', (done) => {
         superagent.post(baseUrl + '/users')
             .send({ email: 'someone@email.com' })
             .set('Accept', 'application/json')
-            .end(function(err, res) {
+            .end((err, res) => {
                 should.exist(err);
                 done();
             });
     });
 
-    describe('When Company Email Inc. exist', function () {
-        before(function (done) {
+    describe('When Company Email Inc. exist', () => {
+        let companyData = { name: 'Email Inc.', domain: '@email.com' };
+
+        before((done) => {
             superagent.post(baseUrl + '/admin/companies')
-                .send({ name: 'Email Inc.', domain: '@email.com' })
+                .send(companyData)
                 .set('Accept', 'application/json')
-                .end(function(err, res) {
+                .end((err, res) => {
                     if (err) {
                         return done(err);
                     }
@@ -69,21 +63,27 @@ describe("/v1/users", function() {
                 });
         });
 
-        describe('POST-ing a new user with Email Inc.', function () {
+        describe('POST-ing a new user with Email Inc.', () => {
             var postErr, postRes;
 
-            before(function (done) {
+            before((done) => {
                 superagent.post(baseUrl + '/pendingusers')
                     .send({ email: 'someone@email.com' })
                     .set('Accept', 'application/json')
-                    .end(function(err, res) {
+                    .end((err, res) => {
                         postErr = err;
                         postRes = res;
                         done();
                     });
             });
 
-            it('should succeed', function () {
+            after((done) => {
+                IntegrationTestUtils.deleteModels([PendingUser, User], () => {
+                    done();
+                });
+            });
+
+            it('should succeed', () => {
                 should.not.exist(postErr);
                 console.log("Res: " + JSON.stringify(postRes));
                 postRes.status.should.be.equal(status.CREATED);
@@ -91,8 +91,8 @@ describe("/v1/users", function() {
                 postRes.header["content-type"].should.containEql('application/json');
             });
 
-            it('GET-ing user to verify with correct code should return the pending user', function (done) {
-                PendingUser.findOne({ email: 'someone@email.com' }, 'code email', function (err, pendingUser) {
+            it('GET-ing user to verify with correct code should return the pending user', (done) => {
+                PendingUser.findOne({ email: 'someone@email.com' }, 'code email', (err, pendingUser) => {
                     should.not.exist(err);
 
                     pendingUser.code.should.be.ok;
@@ -100,7 +100,7 @@ describe("/v1/users", function() {
 
                     superagent.get(baseUrl + '/pendingusers/' + pendingUser.code)
                         .set('Accept', 'application/json')
-                        .end(function(err, res) {
+                        .end((err, res) => {
                             should.not.exist(err);
 
                             console.log(res.text);
@@ -113,7 +113,7 @@ describe("/v1/users", function() {
                 });
             });
 
-            it('GET-ing user to verify with incorrect code should fail', function (done) {
+            it('GET-ing user to verify with incorrect code should fail', (done) => {
                 superagent.get(baseUrl + '/pendingusers/XYZ')
                     .set('Accept', 'application/json')
                     .end(function(err, res) {
@@ -123,21 +123,21 @@ describe("/v1/users", function() {
                     });
             });
 
-            it('GET-ing user to verify without code should fail', function (done) {
+            it('GET-ing user to verify without code should fail', (done) => {
                 superagent.get(baseUrl + '/pendingusers')
                     .set('Accept', 'application/json')
-                    .end(function(err, res) {
+                    .end((err, res) => {
                         should.exist(err);
                         err.status.should.be.equal(status.METHOD_NOT_ALLOWED);
                         done();
                     });
             });
 
-            describe('GET-ing user someone@email.com', function () {
+            describe('GET-ing user someone@email.com', () => {
                 var postErr, postRes;
 
                 before(function (done) {
-                    superagent.get(baseUrl + '/admin/users/someone@email.com')
+                    superagent.get(baseUrl + '/users/status/someone@email.com')
                         .set('Accept', 'application/json')
                         .end(function(err, res) {
                             postErr = err;
@@ -146,22 +146,22 @@ describe("/v1/users", function() {
                         });
                 });
 
-                it('should succeed', function () {
+                it('should succeed', () => {
                     should.not.exist(postErr);
                     postRes.status.should.be.equal(status.OK);
                 });
 
-                it('should get a pending user', function () {
+                it('should get a pending user', () => {
                     var result = JSON.parse(postRes.text);
                     result.status.should.be.equal("pending");
                     result.email.should.be.equal("someone@email.com");
                 });
             });
 
-            describe('POST-ing user someone@email.com to verify', function () {
-                before(function (done) {
+            describe('POST-ing user someone@email.com to verify', () => {
+                before((done) => {
                     PendingUser.findOne({ email: 'someone@email.com' }, 'code email',
-                        function (err, pendingUser) {
+                        (err, pendingUser) => {
                             if (err) {
                                 return done(err);
                             }
@@ -176,7 +176,7 @@ describe("/v1/users", function() {
                                     password: 'someone123'
                                 })
                                 .set('Accept', 'application/json')
-                                .end(function(err, res) {
+                                .end((err, res) => {
                                     postErr = err;
                                     postRes = res;
                                     done();
@@ -184,10 +184,38 @@ describe("/v1/users", function() {
                         });
                 });
 
-                it('should succeed', function () {
+                it('should succeed', () => {
                     postRes.status.should.be.equal(status.CREATED);
                     postRes.headers.location.should.be.equal('/users/someone@email.com');
                 });
+            });
+        });
+
+        describe('With 10 users', () => {
+            let userTokens = [];
+
+            before((done) => {
+                ApiTestUtils.createUsersAndLoginIn(10, companyData.domain, (err, tokens) => {
+                    if (err) {
+                        return done(err);
+                    }
+                    userTokens = tokens;
+                    done();
+                });
+            });
+
+
+            it('GET-ing users in logged user\'s company should return all company users', (done) => {
+                superagent.get(baseUrl + '/users/me/companies/users')
+                    .set('Accept', 'application/json')
+                    .set('Authorization', 'Token ' + userTokens[0])
+                    .end((err, res) => {
+                        should.not.exist(err);
+                        logger.debug(res.text)
+                        var result = JSON.parse(res.text);
+                        result.length.should.be.equal(10);
+                        done();
+                    });
             });
         });
     });
