@@ -11,7 +11,6 @@ Current URIs:
 | GET | /v1/users/me/companies/moods | Get all moods of the Company of the authenticated user | Yes |
 | GET | /v1/users/me | Get the profile info of the authenticated user | Yes |
 | POST | /v1/pendingusers | Request a new user into the app | No |
-
 | GET | /v1/users/me/companies/users | Gets all users within the Company of the authenticated user | Yes |
 | GET | /v1/pendingusers/{code} | Gets the info of the Pending user | No |
 | POST | /v1/pendingusers/{code}/actions/verify | Creates and activate the user from the pending user request | No |
